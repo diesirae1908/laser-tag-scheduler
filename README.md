@@ -57,6 +57,17 @@ gh repo create laser-tag-scheduler --public --push --source=.
 
 The database tables are created automatically on first startup.
 
+## Updating the Frontend
+
+The frontend is pre-built and committed to the repo (in `client/dist/`). After making frontend changes:
+
+```bash
+cd client && npm run build && cd ..
+git add client/dist/ && git commit -m "rebuild frontend" && git push
+```
+
+Render will automatically redeploy when you push.
+
 ## Admin Panel
 
 Access at `/admin/login` — password is configured in your environment variables.
