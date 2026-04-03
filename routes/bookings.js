@@ -17,28 +17,32 @@ router.post('/', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const sessionResult = await client.query(`
-      SELECT s.*,
-        s.total_spots - COALESCE(
-          SUM(b.spots_count) FILTER (WHERE b.payment_status != 'cancelled'), 0
-        ) AS available_spots
-      FROM sessions s
-      LEFT JOIN bookings b ON s.id = b.session_id
-      WHERE s.id = $1 AND s.is_active = true
-      GROUP BY s.id
-      FOR UPDATE OF s
-    `, [session_id]);
+    // Lock the session row first (FOR UPDATE requires no GROUP BY)
+    const sessionLock = await client.query(
+      `SELECT * FROM sessions WHERE id = $1 AND is_active = true FOR UPDATE`,
+      [session_id]
+    );
 
-    if (sessionResult.rows.length === 0) {
+    if (sessionLock.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Session not found or inactive' });
     }
 
-    const session = sessionResult.rows[0];
+    const session = sessionLock.rows[0];
 
-    if (parseInt(session.available_spots) < spots_count) {
+    // Calculate available spots separately now that the row is locked
+    const spotsResult = await client.query(
+      `SELECT COALESCE(SUM(spots_count) FILTER (WHERE payment_status != 'cancelled'), 0) AS booked
+       FROM bookings WHERE session_id = $1`,
+      [session_id]
+    );
+    const booked = parseInt(spotsResult.rows[0].booked);
+    const available_spots = session.total_spots - booked;
+    session.available_spots = available_spots;
+
+    if (available_spots < spots_count) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: `Only ${session.available_spots} spot(s) remaining` });
+      return res.status(400).json({ error: `Only ${available_spots} spot(s) remaining` });
     }
 
     const payment_status =

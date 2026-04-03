@@ -274,10 +274,22 @@ function BookingSuccess({ booking, session, onValidate }) {
           {booking.first_name} {booking.last_name}
         </span>
       </p>
-      <div className="inline-block bg-laser-dark rounded-lg px-4 py-2 mt-2 mb-6">
-        <span className="text-gray-500 text-sm">Booking ID: </span>
-        <span className="text-laser-cyan font-mono font-bold text-lg">#{booking.id}</span>
+      <div className="bg-laser-dark rounded-xl px-5 py-4 mt-3 mb-4 border border-laser-cyan/20">
+        <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Your Booking ID</p>
+        <p className="text-laser-cyan font-mono font-bold text-3xl">#{booking.id}</p>
       </div>
+
+      {isInteract && !validated && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-4 py-3 mb-5 flex items-start gap-3 text-left">
+          <span className="text-yellow-400 text-xl shrink-0">⚠️</span>
+          <div>
+            <p className="text-yellow-300 font-semibold text-sm">Save your Booking ID!</p>
+            <p className="text-yellow-400/70 text-xs mt-0.5">
+              You'll need <span className="font-mono font-bold text-yellow-300">#{booking.id}</span> to validate your payment later if you close this page.
+            </p>
+          </div>
+        </div>
+      )}
 
       {isInteract && !validated && (
         <>
@@ -312,10 +324,8 @@ function BookingSuccess({ booking, session, onValidate }) {
             {validating ? 'Confirming...' : "✓ I've sent the payment"}
           </button>
 
-          <p className="text-gray-600 text-xs">
-            Save your booking ID{' '}
-            <span className="text-laser-cyan font-mono">#{booking.id}</span> — you can also
-            validate later at the "Validate Payment" page.
+          <p className="text-gray-500 text-xs">
+            You can also validate later at the <span className="text-laser-cyan">"Validate Payment"</span> page in the nav.
           </p>
         </>
       )}
